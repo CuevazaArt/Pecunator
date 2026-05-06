@@ -138,6 +138,33 @@ Queries guided to the Binance API for exploration and diagnosis.
 
 ---
 
+## Visual Market Observer (VMO)
+
+LLM-powered chart classification. Captures chart images, analyses them via vision AI, and stores `MarketRegime` snapshots.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/vision/status` | VMO operational status and configuration |
+| `GET` | `/api/v1/vision/regimes/latest` | Latest `MarketRegime` per symbol × timeframe |
+| `GET` | `/api/v1/vision/regimes/{symbol}` | Historical regimes for a symbol (`?timeframe=&limit=50`) |
+| `WS` | `/api/v1/vision/stream` | WebSocket stream — pushes regime updates to connected clients |
+
+### `MarketRegime` fields
+
+| Field | Description |
+|-------|-------------|
+| `symbol` | Trading pair (e.g. `BTCUSDT`) |
+| `timeframe` | Interval (`1h`, `4h`, `1d`) |
+| `trend` | `BULLISH` · `BEARISH` · `SIDEWAYS` |
+| `trend_strength` | `STRONG` · `MODERATE` · `WEAK` |
+| `volatility` | `HIGH` · `MEDIUM` · `LOW` |
+| `regime` | Composite label (e.g. `BULL_MOMENTUM`) |
+| `confidence` | LLM confidence score (0.0 – 1.0) |
+| `recommended_bot` | `Dorothy` · `Masha` · `Thusnelda` · `NONE` |
+| `risk_level` | `HIGH` · `MEDIUM` · `LOW` |
+
+---
+
 ## Earn monitoring
 
 | Method | Endpoint | Description |

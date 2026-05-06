@@ -441,6 +441,6 @@ section 🔮 Phase 3 — Web3
 
 **[⬆️ Back to top](#-pecunator--official-wiki)** · **[📜 Manifesto](Manifesto)** · **[🚀 Get Started](Instalacion-y-Arranque)** · **[🔌 API](API-Surface)**
 
-<sub>📌 Home last update: 2026-05-05 · 🌐 Repo: [github.com/CuevazaArt/Pecunator](https://github.com/CuevazaArt/Pecunator)</sub>
+<sub>📌 Home last update: 2026-05-06 · 🌐 Repo: [github.com/CuevazaArt/Pecunator](https://github.com/CuevazaArt/Pecunator)</sub>
 
 </div>

@@ -1,7 +1,7 @@
 # Module Map — Pecunator
 
 > Reference of the folder structure, ownership and entrypoints of each module.  
-> Last update: 2026-05-05
+> Last update: 2026-05-06
 
 ---
 
@@ -19,7 +19,8 @@ Pecunator/
 │   ├── core/                  # Shared primitives (state/settings/audit/security)
 │   ├── modules/               # Domain modules
 │   │   ├── bots/              # Bot strategies
-│   │   └── tools/             # Operational tools
+│   │   ├── tools/             # Operational tools
+│   │   └── vision/            # Visual Market Observer (VMO)
 │   ├── bot/                   # Compatibility bridge (legacy imports)
 │   └── data/                  # Vault, SQLite and runtime stores
 │
@@ -84,12 +85,30 @@ Shared primitives without dependency on higher layers.
 
 | Module | Responsibility |
 |--------|----------------|
-| `settings.py` | Environment and configuration variables |
-| `vault.py` | Fernet Credential Encryption/Decryption |
+| `settings.py` | Environment and configuration variables (`PECUNATOR_*`) |
+| `vault.py` | Fernet credential encryption/decryption |
 | `state_store.py` | Gateway state persistence (WAL mode) |
-| `ops_audit_log.py` | Audit of operational protocols (SQLite) |
+| `state_wal.py` | WAL helper for SQLite write-ahead-log mode |
+| `ops_audit_log.py` | Audit of operational protocols (SQLite `ops_audit.sqlite`) |
 | `config_manager.py` | Persistent bot configuration |
 | `security_util.py` | Log sanitization |
+| `api_fuse.py` | Circuit breaker — cuts REST if weight exceeds threshold |
+| `api_governor.py` | **Unified multi-service rate limiter** (Binance/Chart-Img/Gemini/OpenAI) — priority tiers P0–P4 |
+| `weight_governor.py` | Weight zone tracking (GREEN / YELLOW / RED) |
+| `exception_zoo.py` | **Exception registry** — fingerprints novel exceptions into `exception_zoo.sqlite` for forensic study |
+| `telemetry_vault.py` | Unified historical data store: kline history, VMO capture index, bot decision log (`telemetry_vault.sqlite`) |
+| `subaccount_registry.py` | Maps bots to Binance sub-accounts (email identifiers only; no API keys) |
+| `kline_collector.py` | Candlestick ingestion into `telemetry_vault` |
+| `regime_detector.py` | Market regime detection primitives |
+| `account_monitor.py` | Periodic account balance polling |
+| `equity.py` | Rolling spot equity conversion to base asset |
+| `event_bus.py` | Lightweight pub/sub for internal events |
+| `market_cache.py` | Symbol price cache |
+| `binance_api_log.py` | Per-call REST log with weight tracking |
+| `rest_usage_log.py` | REST weight consumption audit store |
+| `bot_coordinator.py` | Bot lifecycle orchestrator (start/stop/`desired_running`) |
+| `transfer_service.py` | Intra-account and sub-account transfer helpers |
+| `db_util.py` | SQLite connection utilities (WAL, row_factory) |
 
 ### `runtime/modules/bots/`
 
@@ -106,6 +125,18 @@ Bot strategy modules (canonical imports from this route).
 | Module | Tool | Description |
 |--------|-------------|-------------|
 | `ops/` | Ops Protocols | Implementation of close protocol and red button |
+
+### `runtime/modules/vision/`
+
+**Visual Market Observer (VMO)** — capture → LLM analysis → regime classification pipeline.
+
+| Module | Responsibility |
+|--------|----------------|
+| `observer.py` | Top-level orchestrator: schedules capture cycles, post-cycle kline collection, telemetry purge, error registration |
+| `chart_capture.py` | Downloads chart images via Chart-Img API; prunes old captures |
+| `chart_analyzer.py` | Classifies chart via LLM Vision → `MarketRegime` dataclass |
+| `regime_cache.py` | SQLite persistence for `MarketRegime` snapshots (`vmo_regime_cache.sqlite`) |
+| `config.py` | VMO configuration (`VMOConfig`: symbols, timeframes, db_path) |
 
 ---
 
