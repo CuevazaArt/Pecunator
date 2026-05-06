@@ -27,6 +27,20 @@ This changelog is the disciplined, operator-facing history for architecture, UI 
 - ...
 ```
 
+## 2026-05-06
+
+### Added
+- `BinanceGateway` now feeds every REST call into `ApiGovernor` (dual-layer alongside `ApiFuse`) — priority tier `P_TRADING`, caller `"gateway"`. Tag: `v0.5.1-hardened`.
+- VMO Observer post-cycle marginal kline collection with 30-unit REST weight budget.
+- VMO Observer automatic telemetry purge every 24 cycles (`kline_history` 365d / `bot_decisions` 90d / `capture_index` 30d).
+- All unhandled VMO Observer errors are now registered in `ExceptionZoo`.
+- `SubAccountRegistry` operational state documented: Thusnelda and Reserve sub-accounts disabled (no API keys); Dorothy and Masha keys validated `canTrade=True`; BlueChip pending (Binance signature issue under investigation).
+
+### Operational impact
+- REST governance is now two-layered for Binance calls: `ApiGovernor` controls priority budget and `ApiFuse` acts as thermal circuit breaker. Reduces risk of weight saturation in high-load cycles.
+- Telemetry tables self-purge to avoid unbounded SQLite growth; no manual maintenance needed.
+- `ExceptionZoo` gives forensic visibility into VMO errors without crashing the observer loop.
+
 ## 2026-04-29
 
 ### Added

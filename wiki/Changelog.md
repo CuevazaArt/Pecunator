@@ -14,32 +14,6 @@
 
 ---
 
-## 2026-05-06
-
-### BinanceGateway hardening — ApiGovernor integration
-
-- **Added:** Every Binance REST call now feeds `ApiGovernor` (dual-layer alongside the existing `ApiFuse`)
-  — priority tier `P_TRADING`, caller `"gateway"`
-- **Added:** `BinanceGateway` imports `ExceptionZoo` — groundwork for automatic error registration
-- **Tag:** `v0.5.1-hardened`
-
-### VMO Observer — post-cycle hooks and telemetry purge
-
-- **Added:** Post-cycle marginal kline collection with 30-unit REST weight budget
-- **Added:** Automatic telemetry purge every 24 cycles
-  - `kline_history`: retain last 365 days
-  - `bot_decisions`: retain last 90 days
-  - `capture_index`: retain last 30 days
-- **Added:** All unhandled VMO Observer errors are now registered in `ExceptionZoo`
-
-### SubAccountRegistry — operational state update
-
-- **Disabled:** Thusnelda and Reserve sub-accounts (no API keys provisioned yet)
-- **Validated:** Dorothy and Masha API keys confirmed `canTrade=True`
-- **Pending:** BlueChip sub-account — Binance signature issue under investigation
-
----
-
 ## [Unreleased]
 
 ### Runtime immortality/auto-recovery
@@ -74,6 +48,32 @@
 
 - **Storage:** `credentials.enc` encrypted with Fernet + `vault_local.key`
 - **UX/API:** Flow reduced to add/delete with automatic activation of the last saved key
+
+---
+
+## 2026-05-06
+
+### BinanceGateway hardening — ApiGovernor integration
+
+- **Added:** Every Binance REST call now feeds `ApiGovernor` (dual-layer alongside the existing `ApiFuse`)
+  — priority tier `P_TRADING`, caller `"gateway"`
+- **Added:** `BinanceGateway` imports `ExceptionZoo` — groundwork for automatic error registration
+- **Tag:** `v0.5.1-hardened`
+
+### VMO Observer — post-cycle hooks and telemetry purge
+
+- **Added:** Post-cycle marginal kline collection with 30-unit REST weight budget
+- **Added:** Automatic telemetry purge every 24 cycles
+  - `kline_history`: retain last 365 days
+  - `bot_decisions`: retain last 90 days
+  - `capture_index`: retain last 30 days
+- **Added:** All unhandled VMO Observer errors are now registered in `ExceptionZoo`
+
+### SubAccountRegistry — operational state update
+
+- **Disabled:** Thusnelda and Reserve sub-accounts (no API keys provisioned yet)
+- **Validated:** Dorothy and Masha API keys confirmed `canTrade=True`
+- **Pending:** BlueChip sub-account — Binance signature issue under investigation
 
 ---
 
