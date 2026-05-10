@@ -97,6 +97,8 @@ The philosophy is direct: **the human operator is sovereign**; the code executes
 ### 🧪 Development
 - 🛠️ **[Development Guide](Guia-de-Desarrollo)**  
   Git, tests, CI/CD
+- 🚦 **[Production Readiness Audit](Production-Readiness-Audit)**  
+  Current repo audit, blockers, priority fixes
 - 🔑 **[Wiki Token Permission](Permiso-Wiki-Token)**  
   Give the agent write permissions
 - 📝 **[Changelog](Changelog)**  
@@ -441,6 +443,6 @@ section 🔮 Phase 3 — Web3
 
 **[⬆️ Back to top](#-pecunator--official-wiki)** · **[📜 Manifesto](Manifesto)** · **[🚀 Get Started](Instalacion-y-Arranque)** · **[🔌 API](API-Surface)**
 
-<sub>📌 Home last update: 2026-05-05 · 🌐 Repo: [github.com/CuevazaArt/Pecunator](https://github.com/CuevazaArt/Pecunator)</sub>
+<sub>📌 Home last update: 2026-05-10 · 🌐 Repo: [github.com/CuevazaArt/Pecunator](https://github.com/CuevazaArt/Pecunator)</sub>
 
 </div>
