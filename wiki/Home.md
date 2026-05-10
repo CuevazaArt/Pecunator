@@ -97,6 +97,8 @@ The philosophy is direct: **the human operator is sovereign**; the code executes
 ### 🧪 Development
 - 🛠️ **[Development Guide](Guia-de-Desarrollo)**  
   Git, tests, CI/CD
+- 🧭 **[Current State & Conclusions (2026-05-10)](Current-State-and-Conclusions)**  
+  Verified reality check + performance/efficiency recommendations
 - 🔑 **[Wiki Token Permission](Permiso-Wiki-Token)**  
   Give the agent write permissions
 - 📝 **[Changelog](Changelog)**  
