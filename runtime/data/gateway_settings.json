@@ -1,5 +1,5 @@
 {
-  "autostart_gateway": false,
+  "autostart_gateway": true,
   "poll_interval_sec": 30,
   "time_sync_interval_sec": 300,
   "equity_poll_stride": 1,

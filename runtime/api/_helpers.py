@@ -99,9 +99,9 @@ def build_snapshot(ctx: AppContext) -> GatewaySnapshotOut:
     out = GatewaySnapshotOut(
         gateway_running=ctx.gateway is not None,
         last_error=ctx.state.last_error,
-        account_summary=dict(ctx.state.account_summary or {}),
-        account_equity=dict(ctx.state.account_equity or {}),
-        balances=list(ctx.state.balances),
+        account_summary=dict(ctx.state.account_summary or {}) if ctx.gateway else {},
+        account_equity=dict(ctx.state.account_equity or {}) if ctx.gateway else {},
+        balances=list(ctx.state.balances) if ctx.gateway else [],
         balances_total_assets_in_response=int(getattr(ctx.state, "balances_total_assets_in_response", 0) or 0),
         ws_connected=bool(ctx.state.connected),
         selected_symbol=ctx.state.selected_symbol,

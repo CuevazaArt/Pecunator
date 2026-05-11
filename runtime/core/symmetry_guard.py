@@ -80,7 +80,7 @@ class SymmetryGuard:
     # Max consecutive order failures before hub pause
     MAX_FAILURE_STREAK = 3
     # Cache TTL for preflight results (seconds)
-    PREFLIGHT_CACHE_TTL = 120.0  # 2 minutes
+    PREFLIGHT_CACHE_TTL = 10.0  # 10 seconds
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -383,10 +383,11 @@ class SymmetryGuard:
             health.blockers.append(f"SPOT_QUERY_FAILED: {str(e)[:200]}")
 
         required_spot = health.dorothy_exposure * (Decimal("1") + self.CAPITAL_BUFFER_PCT)
+        required_spot = max(required_spot, Decimal("8"))  # Hard minimum 8 USDT
         if health.spot_usdt_free < required_spot:
             health.blockers.append(
                 f"SPOT_CAPITAL_LOW: Need {required_spot} USDT for Dorothy "
-                f"(max_exposure={health.dorothy_exposure} + {self.CAPITAL_BUFFER_PCT*100}% buffer), "
+                f"(max_exposure={health.dorothy_exposure} + {self.CAPITAL_BUFFER_PCT*100}% buffer, min 8 USDT), "
                 f"have {health.spot_usdt_free} USDT free."
             )
 
@@ -427,6 +428,7 @@ class SymmetryGuard:
             # Check total available = spot + margin for Elphaba's needs
             total_for_elphaba = health.spot_usdt_free + health.margin_usdt_free
             required_margin = health.elphaba_exposure * (Decimal("1") + self.CAPITAL_BUFFER_PCT)
+            required_margin = max(required_margin, Decimal("8"))  # Hard minimum 8 USDT
             if total_for_elphaba < required_spot + required_margin:
                 health.blockers.append(
                     f"TOTAL_CAPITAL_LOW: Combined Spot+Margin={total_for_elphaba} USDT "
