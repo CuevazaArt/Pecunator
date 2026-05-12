@@ -18,6 +18,10 @@ class StateStore:
     recent_trades: Deque[Dict[str, Any]] = field(default_factory=lambda: deque(maxlen=50))
     # Spot /api/v3/account total balance rows Binance returned (before non-zero filter).
     balances: List[Dict[str, Any]] = field(default_factory=list)
+    # Isolated margin balances (separate from Spot).
+    margin_balances: List[Dict[str, Any]] = field(default_factory=list)
+    # Combined Spot + Margin balances (for equity calculations).
+    combined_balances: List[Dict[str, Any]] = field(default_factory=list)
     balances_total_assets_in_response: int = 0
     open_orders: List[Dict[str, Any]] = field(default_factory=list)
     my_trades: List[Dict[str, Any]] = field(default_factory=list)

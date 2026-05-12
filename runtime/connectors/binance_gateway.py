@@ -198,17 +198,19 @@ class BinanceGateway:
         raw_bal = data.get("balances", [])
         if not isinstance(raw_bal, list):
             raw_bal = []
-            
-        consolidated = {}
+
+        # ── Spot-only balances (what user sees in Binance Spot wallet) ──
+        spot_balances: dict[str, dict[str, float]] = {}
         for b in raw_bal:
             ast = b.get("asset")
             if ast:
-                consolidated[ast] = {
+                spot_balances[ast] = {
                     "free": float(b.get("free", 0) or 0),
-                    "locked": float(b.get("locked", 0) or 0)
+                    "locked": float(b.get("locked", 0) or 0),
                 }
 
-        # ── Fetch Isolated Margin Balances to reflect real equity ──
+        # ── Isolated Margin balances (separate wallet) ──
+        margin_balances: dict[str, dict[str, float]] = {}
         try:
             iso_acc = await self._client.get_isolated_margin_account()
             for pair in iso_acc.get("assets", []):
@@ -219,21 +221,44 @@ class BinanceGateway:
                         free = float(ast_data.get("free", 0) or 0)
                         locked = float(ast_data.get("locked", 0) or 0)
                         if free > 0 or locked > 0:
-                            if ast in consolidated:
-                                consolidated[ast]["free"] += free
-                                consolidated[ast]["locked"] += locked
+                            if ast in margin_balances:
+                                margin_balances[ast]["free"] += free
+                                margin_balances[ast]["locked"] += locked
                             else:
-                                consolidated[ast] = {"free": free, "locked": locked}
+                                margin_balances[ast] = {"free": free, "locked": locked}
         except Exception as e:
             _LOG.warning("Failed to fetch isolated margin balances: %s", e)
 
-        self.state.balances_total_assets_in_response = len(consolidated)
+        # ── Store Spot-only in state.balances (this is what the UI shows
+        #    as FREE / LOCK and what SymmetryGuard uses for capital checks) ──
+        self.state.balances_total_assets_in_response = len(spot_balances)
         self.state.balances = [
             {"asset": k, "free": f"{v['free']:.8f}", "locked": f"{v['locked']:.8f}"}
-            for k, v in consolidated.items()
+            for k, v in spot_balances.items()
             if v["free"] > 0 or v["locked"] > 0
         ]
-        
+
+        # ── Store margin balances separately for the UI ──
+        self.state.margin_balances = [
+            {"asset": k, "free": f"{v['free']:.8f}", "locked": f"{v['locked']:.8f}"}
+            for k, v in margin_balances.items()
+            if v["free"] > 0 or v["locked"] > 0
+        ]
+
+        # ── Combined view for equity calculation (total net worth) ──
+        combined = dict(spot_balances)
+        for ast, vals in margin_balances.items():
+            if ast in combined:
+                combined[ast]["free"] += vals["free"]
+                combined[ast]["locked"] += vals["locked"]
+            else:
+                combined[ast] = dict(vals)
+        self.state.combined_balances = [
+            {"asset": k, "free": f"{v['free']:.8f}", "locked": f"{v['locked']:.8f}"}
+            for k, v in combined.items()
+            if v["free"] > 0 or v["locked"] > 0
+        ]
+
         self.bus.publish("account.balances", self.state.balances)
         self.state.last_error = None
         self._capture_rest_weight_from_client(action="fetch_account:get_account")
@@ -279,7 +304,9 @@ class BinanceGateway:
                 return
 
         base = (base_asset or equity_base_asset()).strip().upper() or "USDT"
-        snap = compute_spot_equity_in_base(self.state.balances, self._ticker_prices, base_asset=base)
+        # Use combined (Spot + Margin) balances for total net worth equity
+        equity_balances = getattr(self.state, "combined_balances", None) or self.state.balances
+        snap = compute_spot_equity_in_base(equity_balances, self._ticker_prices, base_asset=base)
         roll = self._equity_rolling.update(base_asset=base, current=Decimal(snap["current"]))
         self.state.account_equity = {
             **snap,
@@ -619,11 +646,16 @@ class BinanceGateway:
     # ── Lightweight REST poll (only time_sync + equity) ──────────────
 
     async def _poll_account_loop(self, interval: float) -> None:
-        """Minimal REST loop: only time_sync and equity refresh.
-        Balances and orders are handled by User Data Stream (ZERO weight).
+        """Minimal REST loop: time_sync, equity refresh, and periodic
+        account balance refresh to prevent stale WAL-hydrated data.
+
+        Balances are *also* updated in real-time via User Data Stream,
+        but we do a full REST fetch every ACCOUNT_REFRESH_STRIDE cycles
+        (and always on the first cycle) to guarantee accuracy.
         """
         from runtime.core.api_fuse import get_api_fuse
         eq_stride = equity_poll_stride()
+        ACCOUNT_REFRESH_STRIDE = 5  # every ~2.5 min at 30s poll
         while not self._stop.is_set():
             # ── API FUSE CHECK ──────────────────────────────────
             fuse = get_api_fuse()
@@ -654,8 +686,22 @@ class BinanceGateway:
                         )
                     self._last_time_sync_monotonic = now_mono
 
-                # Equity refresh (2 weight points for get_all_tickers)
+                # Periodic account balance refresh (10 weight points)
+                # Always on first cycle (cycle 0) to overwrite stale WAL data
                 self._poll_cycle += 1
+                if self._poll_cycle == 1 or (self._poll_cycle % ACCOUNT_REFRESH_STRIDE == 0):
+                    try:
+                        await self.fetch_account()
+                        _LOG.debug(
+                            "poll: periodic fetch_account (cycle %d)",
+                            self._poll_cycle,
+                        )
+                    except Exception as e:
+                        self._emit_log(
+                            f"poll fetch_account: {sanitize_log_message(str(e))}"
+                        )
+
+                # Equity refresh (2 weight points for get_all_tickers)
                 if eq_stride <= 1 or (self._poll_cycle % eq_stride == 0):
                     await self.refresh_equity(force_tickers=True)
 

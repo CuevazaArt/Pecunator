@@ -74,7 +74,7 @@ class TelemetryCollector:
     def __init__(
         self,
         data_dir: Path,
-        interval_sec: float = 10.0,
+        interval_sec: float = 60.0,
     ) -> None:
         self._db_path = Path(data_dir) / "telemetry_snapshots.sqlite"
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -161,7 +161,7 @@ class TelemetryCollector:
                 except (ValueError, TypeError):
                     pass
 
-            # Balances
+            # Balances — Spot only (state.balances is now Spot-only)
             balances = getattr(state, "balances", None) or []
             for b in balances:
                 if isinstance(b, dict) and b.get("asset") == "USDT":
@@ -169,7 +169,15 @@ class TelemetryCollector:
                     locked_usdt = float(b.get("locked", 0) or 0)
                     break
 
-        margin_usdt = max(0.0, equity - free_usdt - locked_usdt)
+        # Margin USDT from isolated margin wallet
+        margin_usdt = 0.0
+        if state:
+            margin_bals = getattr(state, "margin_balances", None) or []
+            for b in margin_bals:
+                if isinstance(b, dict) and b.get("asset") == "USDT":
+                    margin_usdt = float(b.get("free", 0) or 0) + float(b.get("locked", 0) or 0)
+                    break
+
         # Always emit numeric values — let the UI decide how to render zero.
         # Sending None caused the frontend to discard ticks, freezing charts.
         snapshot["equity_usdt"] = equity
