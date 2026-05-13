@@ -47,6 +47,9 @@ class UnifiedHubPageState extends State<UnifiedHubPage> {
     _loadPresets();
     _api = EngineApi(widget.engineBase);
 
+    // Initialize with current state synchronously
+    _wsConnected = TelemetryHub.instance.isWsConnected;
+
     // Subscribe to WebSocket-pushed telemetry for ALL state (gateway, fuse, bots)
     _telemetrySub = TelemetryHub.instance.stream.listen(_onTelemetryTick);
     // Track WebSocket connection state for the WS status indicator
