@@ -269,7 +269,7 @@ class DorothyRunner(BaseStrategyRunner):
 
             if _trend_svc.needs_entry_refresh(symbol):
                 try:
-                    kline_now = await client.get_klines(symbol=symbol, interval="1h", limit=1)
+                    kline_now = await client.get_klines(symbol=symbol, interval="1m", limit=1)
                     candle_open_1h = float(kline_now[0][1]) if kline_now else 0.0
                     _trend_svc.update_entry_gate(symbol, float(market_price), candle_open_1h)
                 except Exception as eg_err:

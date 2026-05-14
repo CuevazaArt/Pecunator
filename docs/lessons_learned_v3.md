@@ -21,10 +21,11 @@ Durante la fase de endurecimiento y auditoría del motor Pecunator, se identific
 - Implementado `RotatingFileHandler` (15MB total).
 - Silenciado `uvicorn.access` por defecto (activable vía `PECUNATOR_ACCESS_LOGS=1`).
 
-## 4. Asimetría de Despliegue
-**Problema**: Crear Dorothy y luego Elphaba manualmente dejaba una ventana de tiempo (o riesgo de error humano/red) donde solo un lado del hedge estaba activo.
-**Lección**: Las operaciones de cobertura deben ser atómicas.
-**Solución**: Endpoint `/api/v1/hub/deploy-symmetric` que garantiza el éxito de ambos o realiza rollback total.
+## 4. Asimetría de Despliegue (DEPRECADO)
+**Problema original**: Crear Dorothy y luego Elphaba manualmente dejaba una ventana de tiempo (o riesgo de error humano/red) donde solo un lado del hedge estaba activo.
+**Lección**: Las operaciones de cobertura debían ser atómicas.
+**Solución original**: Endpoint `/api/v1/hub/deploy-symmetric` que garantizaba el éxito de ambos o realizaba rollback total.
+**Actualización (Mayo 2026)**: Esta directiva de simetría estricta ha sido **DEPRECADA**. La experiencia en el modelo HFT demostró que es vital poder apagar o encender un hemisferio (ej. dejar solo a Dorothy en mercados muy alcistas, o solo a Elphaba en bajistas) de forma asimétrica desde la UI para proteger el capital ante caídas bruscas.
 
 ## 5. Supervivencia del Proceso
 **Problema**: Si el motor Python crasheaba por una excepción no controlada, no había nada que lo levantara automáticamente.

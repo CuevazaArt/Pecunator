@@ -132,6 +132,26 @@ class _BotHubTemplateState extends State<BotHubTemplate> {
 
   int get _botsRunning => _bots.where((b) => b['running'] == true).length;
 
+  Future<void> _toggleHub(bool enable) async {
+    setState(() => _loading = true);
+    try {
+      final futures = <Future>[];
+      for (final bot in _bots) {
+        final botId = bot['bot_id'] as String?;
+        if (botId != null) {
+          if (enable && bot['running'] != true) {
+            futures.add(widget.startBot(botId));
+          } else if (!enable && bot['running'] == true) {
+            futures.add(widget.stopBot(botId));
+          }
+        }
+      }
+      await Future.wait(futures);
+    } finally {
+      await _refresh();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -177,6 +197,17 @@ class _BotHubTemplateState extends State<BotHubTemplate> {
                           ? Colors.greenAccent
                           : Colors.white38,
                     ),
+                  ),
+                ),
+                const Spacer(),
+                Transform.scale(
+                  scale: 0.7,
+                  child: Switch(
+                    value: _botsRunning > 0,
+                    onChanged: _bots.isEmpty ? null : _toggleHub,
+                    activeColor: widget.hubColor,
+                    inactiveThumbColor: Colors.white38,
+                    inactiveTrackColor: Colors.white12,
                   ),
                 ),
               ],
