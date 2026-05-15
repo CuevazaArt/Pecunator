@@ -28,7 +28,7 @@ class OrphanGuard:
     """Periodic scanner for orphaned positions without matching TP orders."""
 
     # Minimum interval between scans (seconds)
-    SCAN_INTERVAL_SEC = 600.0  # 10 minutes
+    SCAN_INTERVAL_SEC = 120.0  # 2 minutes (reduced from 10 to catch orphans faster)
     # How far back to consider a position "stale" enough to be orphaned
     MAX_RETRY_ATTEMPTS = 3
 

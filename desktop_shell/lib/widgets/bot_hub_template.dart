@@ -205,7 +205,7 @@ class _BotHubTemplateState extends State<BotHubTemplate> {
                   child: Switch(
                     value: _botsRunning > 0,
                     onChanged: _bots.isEmpty ? null : _toggleHub,
-                    activeColor: widget.hubColor,
+                    activeThumbColor: widget.hubColor,
                     inactiveThumbColor: Colors.white38,
                     inactiveTrackColor: Colors.white12,
                   ),

@@ -33,7 +33,7 @@ class _StagedSymbolPanelState extends State<StagedSymbolPanel> with SingleTicker
   Timer? _beepTimer;
 
   // ── Shared (symmetric) controllers ──
-  final _sharedQtyCtrl = TextEditingController(text: '6');
+  final _sharedQtyCtrl = TextEditingController(text: '7.0');
   final _sharedProfitCtrl = TextEditingController(text: '0.05');
   final _sharedDropCtrl = TextEditingController(text: '0.03');
   final _sharedLoopCtrl = TextEditingController(text: '450');
@@ -66,7 +66,7 @@ class _StagedSymbolPanelState extends State<StagedSymbolPanel> with SingleTicker
     // Apply initial preset to shared values
     final dp = widget.initialPresetDorothy;
     if (dp != null) {
-      _sharedQtyCtrl.text = dp['quote_order_qty']?.toString() ?? '6';
+      _sharedQtyCtrl.text = dp['quote_order_qty']?.toString() ?? '7.0';
       _sharedProfitCtrl.text = dp['profit_factor']?.toString() ?? '0.05';
       _sharedDropCtrl.text = dp['margin_drop_factor']?.toString() ?? '0.03';
       _sharedLoopCtrl.text = dp['loop_interval_sec']?.toString() ?? '450';

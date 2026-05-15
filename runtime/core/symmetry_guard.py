@@ -93,8 +93,15 @@ class SymmetryGuard:
         self._needs_symbol_rotation: bool = False  # Flag for auto-rotation
         self._paused_symbols: dict[str, dict[str, Any]] = {}  # symbol -> pause info
 
-    # Error codes that indicate temporary liquidity issues (not system bugs)
-    _RECOVERABLE_CODES = {"-3045", "-3041", "-3042"}
+    # Error codes that indicate temporary/symbol-specific issues (not system bugs).
+    # These trigger per-symbol pause instead of hub-wide shutdown.
+    _RECOVERABLE_CODES = {
+        "-3045", "-3041", "-3042",    # Margin liquidity issues
+        "-2010",                       # Insufficient balance (symbol-specific capital)
+        "-1013",                       # Filter failure (NOTIONAL/LOT_SIZE)
+        "FILTER_ABORT",                # Our pre-flight filter rejection
+        "TP_ORPHAN",                   # Buy succeeded, TP failed
+    }
     # Cooldown before auto-retry after a recoverable pause (seconds)
     RECOVERY_COOLDOWN_SEC = 300.0  # 5 minutes
     # Max auto-recovery attempts before triggering symbol rotation
@@ -356,11 +363,11 @@ class SymmetryGuard:
             )
 
         # ── Check 2: Compute max exposure ─────────────────────────
-        d_qty = _dec(getattr(dorothy_cfg, "quote_order_qty", "6"), "6")
+        d_qty = _dec(getattr(dorothy_cfg, "quote_order_qty", "7"), "7")
         d_rungs = max(1, int(getattr(dorothy_cfg, "max_rungs_per_symbol", 3)))
         health.dorothy_exposure = d_qty * d_rungs
 
-        e_qty = _dec(getattr(elphaba_cfg, "quote_order_qty", "6"), "6")
+        e_qty = _dec(getattr(elphaba_cfg, "quote_order_qty", "7"), "7")
         e_rungs = max(1, int(getattr(elphaba_cfg, "max_rungs_per_symbol", 3)))
         health.elphaba_exposure = e_qty * e_rungs
 
@@ -476,11 +483,11 @@ class SymmetryGuard:
                 f"SYMBOL_MISMATCH: Dorothy={d_sym} vs Elphaba={e_sym}"
             )
 
-        d_qty = _dec(getattr(dorothy_cfg, "quote_order_qty", "6"), "6")
+        d_qty = _dec(getattr(dorothy_cfg, "quote_order_qty", "7"), "7")
         d_rungs = max(1, int(getattr(dorothy_cfg, "max_rungs_per_symbol", 3)))
         health.dorothy_exposure = d_qty * d_rungs
 
-        e_qty = _dec(getattr(elphaba_cfg, "quote_order_qty", "6"), "6")
+        e_qty = _dec(getattr(elphaba_cfg, "quote_order_qty", "7"), "7")
         e_rungs = max(1, int(getattr(elphaba_cfg, "max_rungs_per_symbol", 3)))
         health.elphaba_exposure = e_qty * e_rungs
 
@@ -508,8 +515,8 @@ class SymmetryGuard:
     # compute_allocation() is for UI/planning display only.
     # rebalance() is an optional manual tool — NOT auto-invoked.
 
-    # Minimum reserve per wallet: 3 operations × 6 USDT = 18 USDT
-    MIN_RESERVE_USDT = Decimal("18")
+    # Minimum reserve per wallet: 3 operations × 7 USDT = 21 USDT
+    MIN_RESERVE_USDT = Decimal("21")
     ACTIVE_RATIO = Decimal("0.75")
     INACTIVE_RATIO = Decimal("0.25")
 
@@ -557,8 +564,8 @@ class SymmetryGuard:
             spot_target = total_capital / 2
             margin_target = total_capital / 2
 
-        ops_spot = int(spot_target / Decimal("6"))
-        ops_margin = int(margin_target / Decimal("6"))
+        ops_spot = int(spot_target / Decimal("7"))
+        ops_margin = int(margin_target / Decimal("7"))
 
         return {
             "cleared": True,

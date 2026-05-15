@@ -65,7 +65,7 @@ class DorothyConfig:
     def normalize(self) -> None:
         self.symbol = normalize_binance_spot_symbol(self.symbol)
         self.loop_interval_sec = max(1, min(int(self.loop_interval_sec), 86_400))
-        self.quote_order_qty = max(_dec(self.quote_order_qty, "5.0"), Decimal("5.0"))
+        self.quote_order_qty = max(_dec(self.quote_order_qty, "7.0"), Decimal("7.0"))
         # L0 floor: 3% minimum profit to ensure viability after commissions
         self.profit_factor = max(_dec(self.profit_factor), Decimal("0.03"))
         # L0 floor: 1% minimum DCA spread to prevent runaway buying on every small dip
@@ -95,6 +95,11 @@ class DorothyConfig:
 class DorothyRunner(BaseStrategyRunner):
 
     BOT_TYPE = "dorothy"
+    # Instant-pause: a single TP orphan feeds this many failures to
+    # SymmetryGuard, immediately hitting MAX_FAILURE_STREAK and pausing
+    # the symbol.  This prevents the drain loop where the bot keeps
+    # buying without ever placing a sell.
+    _TP_ORPHAN_PENALTY = 3
 
     def __init__(
         self,
@@ -506,7 +511,46 @@ class DorothyRunner(BaseStrategyRunner):
                         sell_qty = max(sell_qty, _sf.min_qty)
                         _ok2, _r2 = _sf.validate_order(sell_qty, sell_price)
                         if not _ok2:
-                            self._emit("ERROR", f"dorothy:filter_unrecoverable: {_r2}")
+                            # HARD ABORT: TP will fail on Binance → orphan loop
+                            self._emit("CRITICAL", f"dorothy:FILTER_ABORT: {_r2}", {
+                                "symbol": symbol, "sell_qty": str(sell_qty),
+                                "sell_price": str(sell_price),
+                                "action": "Aborting TP placement — would create orphan.",
+                            })
+                            try:
+                                get_symmetry_guard().record_order_failure(
+                                    self._bot_key(), f"FILTER_ABORT: {_r2}"
+                                )
+                            except Exception:
+                                pass
+                            report["decision"] = "TP_FILTER_REJECTED"
+                            report["error"] = _r2
+                            report["execution"] = "LIVE"
+                            report["buy_order_id"] = buy.get("orderId")
+                            report["filled_qty"] = str(qty)
+                            report["filled_buy_price"] = str(buy_price)
+                            self._maybe_emit_metrics()
+                            return report
+                    else:
+                        # Non-notional filter failure — also abort
+                        self._emit("CRITICAL", f"dorothy:FILTER_ABORT: {_reason}", {
+                            "symbol": symbol, "sell_qty": str(sell_qty),
+                            "sell_price": str(sell_price),
+                        })
+                        try:
+                            get_symmetry_guard().record_order_failure(
+                                self._bot_key(), f"FILTER_ABORT: {_reason}"
+                            )
+                        except Exception:
+                            pass
+                        report["decision"] = "TP_FILTER_REJECTED"
+                        report["error"] = _reason
+                        report["execution"] = "LIVE"
+                        report["buy_order_id"] = buy.get("orderId")
+                        report["filled_qty"] = str(qty)
+                        report["filled_buy_price"] = str(buy_price)
+                        self._maybe_emit_metrics()
+                        return report
         except Exception as _ef_err:
             self._emit("WARNING", f"exchange_filters:validate_failed: {_ef_err}")
 
@@ -548,6 +592,8 @@ class DorothyRunner(BaseStrategyRunner):
         except Exception as tp_err:
             # ── CRITICAL: BUY succeeded but SELL LIMIT failed ─────
             # Position is now "orphaned" — asset bought but no TP set.
+            # DRAIN LOOP PREVENTION: immediately pause THIS symbol so
+            # the bot does not buy again on the next cycle without a TP.
             self._emit("CRITICAL", "dorothy:TP_LIMIT_FAILED_ORPHAN", {
                 "symbol": symbol,
                 "buy_order_id": buy.get("orderId"),
@@ -555,12 +601,16 @@ class DorothyRunner(BaseStrategyRunner):
                 "filled_buy_price": str(buy_price),
                 "intended_sell_price": str(sell_price),
                 "error": str(tp_err)[:300],
-                "action": "MANUAL INTERVENTION REQUIRED — asset bought without TP.",
+                "action": "Symbol auto-paused to prevent drain loop. OrphanGuard will attempt recovery.",
             })
+            # Feed SymmetryGuard with 3 failures at once to immediately
+            # pause this symbol and prevent the drain loop.
             try:
-                get_symmetry_guard().record_order_failure(
-                    self._bot_key(), f"TP_ORPHAN: {tp_err}"
-                )
+                _guard = get_symmetry_guard()
+                for _ in range(self.__class__._TP_ORPHAN_PENALTY):
+                    _guard.record_order_failure(
+                        self._bot_key(), f"TP_ORPHAN: {tp_err}"
+                    )
             except Exception:
                 pass
                 

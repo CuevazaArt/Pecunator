@@ -62,7 +62,7 @@ class ElphabaConfig:
     def normalize(self) -> None:
         self.symbol = normalize_binance_spot_symbol(self.symbol)
         self.loop_interval_sec = max(1, min(int(self.loop_interval_sec), 86_400))
-        self.quote_order_qty = max(_dec(self.quote_order_qty, "5.0"), Decimal("5.0"))
+        self.quote_order_qty = max(_dec(self.quote_order_qty, "7.0"), Decimal("7.0"))
         self.profit_factor = max(_dec(self.profit_factor), Decimal("0.03"))
         self.margin_rise_factor = max(_dec(self.margin_rise_factor), Decimal("0"))
         self.qty_decimals = max(0, min(int(self.qty_decimals), 18))
@@ -88,6 +88,9 @@ class ElphabaRunner(BaseStrategyRunner):
     """Anti-Dorothy: bearish trend-fading via Isolated Margin shorts."""
 
     BOT_TYPE = "elphaba"
+    # Instant-pause: a single TP orphan feeds this many failures to
+    # SymmetryGuard, immediately pausing the symbol.
+    _TP_ORPHAN_PENALTY = 3
 
     def __init__(
         self,
@@ -500,6 +503,7 @@ class ElphabaRunner(BaseStrategyRunner):
         except Exception as tp_err:
             # ── CRITICAL: Short succeeded but COVER LIMIT failed ──
             # Position is now "orphaned" — short open without take-profit.
+            # DRAIN LOOP PREVENTION: immediately pause THIS symbol.
             self._emit("CRITICAL", "elphaba:TP_COVER_FAILED_ORPHAN", {
                 "symbol": symbol,
                 "short_order_id": short_order.get("orderId"),
@@ -507,12 +511,16 @@ class ElphabaRunner(BaseStrategyRunner):
                 "filled_short_price": str(short_price),
                 "intended_tp_price": str(tp_price),
                 "error": str(tp_err)[:300],
-                "action": "MANUAL INTERVENTION REQUIRED — short open without cover.",
+                "action": "Symbol auto-paused to prevent drain loop. OrphanGuard will attempt recovery.",
             })
+            # Feed SymmetryGuard with 3 failures at once to immediately
+            # pause this symbol and prevent the drain loop.
             try:
-                get_symmetry_guard().record_order_failure(
-                    self._bot_key(), f"TP_ORPHAN: {tp_err}"
-                )
+                _guard = get_symmetry_guard()
+                for _ in range(self.__class__._TP_ORPHAN_PENALTY):
+                    _guard.record_order_failure(
+                        self._bot_key(), f"TP_ORPHAN: {tp_err}"
+                    )
             except Exception:
                 pass
             report["decision"] = "TP_FAILED_ORPHAN"
