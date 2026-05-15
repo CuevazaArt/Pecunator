@@ -118,9 +118,10 @@ class UnifiedHubPageState extends State<UnifiedHubPage> {
       if (dorBot['bot_id'] != null) {
         _api.hubStartBot(dorBot['bot_id']).catchError((e) { debugPrint('Error auto-starting Dorothy: $e'); return <String, dynamic>{}; });
       }
-      if (elpBot['bot_id'] != null) {
-        _api.elphabaStartBot(elpBot['bot_id']).catchError((e) { debugPrint('Error auto-starting Elphaba: $e'); return <String, dynamic>{}; });
-      }
+      // Deprecated: Elphaba is disabled by default. Manual start required if desired.
+      // if (elpBot['bot_id'] != null) {
+      //   _api.elphabaStartBot(elpBot['bot_id']).catchError((e) { debugPrint('Error auto-starting Elphaba: $e'); return <String, dynamic>{}; });
+      // }
 
       setState(() {
         _savedPresets[dConfig['symbol']] = dConfig;

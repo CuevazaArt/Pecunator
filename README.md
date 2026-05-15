@@ -3,8 +3,7 @@
 PecunatorCore is a modular autonomous trading runtime with a local Python engine (FastAPI) and a dedicated Flutter desktop UI.
 This repository is **desktop-first**: the Flutter shell connects to the local engine over HTTP.
 
-**Symmetric Hub Architecture:** Dorothy (bullish DCA spot) + Elphaba (bearish margin short) operate as a paired hedge on the same symbols.
-
+**Architecture:** Dorothy (bullish DCA spot) is the sole owner and default engine of the Hub. Elphaba (bearish margin short) is considered a minor guest, disabled by default due to its experimental nature and margin risk. The concept of symmetric hedge is deprecated.
 ## Directiva de trabajo
 
 - Este IDE, conversación y coordinación entre nosotros: **Español latino**, por defecto.
@@ -57,7 +56,7 @@ Conectores Binance (`python-binance`), cofre y estado: `runtime/` (ver `runtime/
 ### Estructura modular del repo (raíz)
 
 - `runtime/bot/` — Dorothy (spot DCA) and Elphaba (margin short) runners
-- `runtime/core/` — Infrastructure: WeightGovernor, ApiFuse, BotCoordinator, SymmetryGuard, BudgetGuard, OrderLedger, StateWAL
+- `runtime/core/` — Infrastructure: WeightGovernor, ApiFuse, BotCoordinator, BudgetGuard, OrderLedger, StateWAL (SymmetryGuard is deprecated)
 - `runtime/api/` — FastAPI routers and hub services
 - `runtime/modules/` — TrendSignal, VMO
 - `runtime/connectors/` — BinanceGateway
@@ -105,7 +104,7 @@ python -m pytest runtime/tests/ -x -q --tb=short
 | `bot_coordinator` | Phase-shift bot launches to distribute API load | (internal) |
 | `budget_guard` | Hard daily USDT spend ceiling | `/api/v1/budget-guard/status` |
 | `order_ledger` | Forensic order audit trail | `/api/v1/order-ledger/recent` |
-| `symmetry_guard` | Symmetric hub watchdog with auto-recovery | (internal) |
+| `symmetry_guard` | (Deprecated) Symmetric hub watchdog | (internal) |
 | `state_wal` | Crash-safe WAL-backed state persistence | (internal) |
 
 ### Strategy modules

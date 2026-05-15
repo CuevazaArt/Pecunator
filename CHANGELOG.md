@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Architecture Update (v3.8.0)
+
+- **Hub Ownership:** Dorothy (Spot DCA) is now the sole owner and default engine of the Hub.
+- **Elphaba Deprecation:** Elphaba (Margin Short) is disabled by default and considered a minor, experimental guest due to margin complexity and API rate limit constraints.
+- **Symmetry Guard:** The concept of a symmetric hedge and the `SymmetryGuard` module are officially deprecated.
+
 ### Production Hardening & Security (v3.7.5+)
 
 - **Explicit Deployment:** Removed dangerous auto-update loops (`git pull` at startup) to guarantee predictable and tested deployments.
