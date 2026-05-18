@@ -27,6 +27,20 @@ This changelog is the disciplined, operator-facing history for architecture, UI 
 - ...
 ```
 
+## 2026-05-17
+
+### Changed
+- **Dependency Bounds:** `requirements.txt` now uses upper-bounded ranges (`>=X,<Y`) instead of unbounded `>=X` to prevent silent breaking changes from major version bumps while still allowing patch/minor updates.
+- **Script Hardening:** `scripts/engine/_status.py` rewritten with proper error handling, module docstring, and graceful degradation when the engine is unreachable.
+- **Elphaba Inline Docs:** Added docstrings to all public and override methods in `runtime/api/elphaba_service.py` to match the documentation standard already present in `base_hub_service.py` and `telemetry_collector.py`.
+
+### Operational impact
+- Builds are now reproducible within bounded ranges — no risk of a `python-binance` 2.0 or `websockets` 17.0 silently breaking the engine.
+- `_status.py` no longer crashes with an unhandled exception when the engine is down — prints a clear error message instead.
+
+### Context
+- Reviewed external Copilot critique from 2026-05-16. Most findings were already addressed by existing infrastructure (AlertDispatcher, StateWAL, events.jsonl structured logging, BaseHubService pattern). Applied 3 valid improvements; rejected 7 as stale or already resolved. See `docs/hardening-critique.md` §6 for full triage.
+
 ## 2026-05-09 (v3.1.1)
 
 ### Added

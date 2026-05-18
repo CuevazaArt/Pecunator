@@ -51,10 +51,10 @@ class BotHubTemplate extends StatefulWidget {
   });
 
   @override
-  State<BotHubTemplate> createState() => _BotHubTemplateState();
+  State<BotHubTemplate> createState() => BotHubTemplateState();
 }
 
-class _BotHubTemplateState extends State<BotHubTemplate> {
+class BotHubTemplateState extends State<BotHubTemplate> {
   Timer? _refreshTimer;
   List<Map<String, dynamic>> _bots = [];
   bool _loading = true;
@@ -118,6 +118,7 @@ class _BotHubTemplateState extends State<BotHubTemplate> {
       if (!mounted) return;
       setState(() {
         _bots = bots;
+        _error = null;
       });
 
       // Fetch logs for expanded bot to keep them fresh without flickering

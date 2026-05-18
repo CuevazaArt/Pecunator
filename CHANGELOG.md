@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Code Quality & Hardening (2026-05-17)
+
+- **Dependency Bounds:** `requirements.txt` uses upper-bounded ranges (`>=X,<Y`) to prevent silent major-version breakage.
+- **Script Hardening:** `scripts/engine/_status.py` rewritten with try/except and graceful degradation.
+- **Elphaba Docstrings:** All override methods in `elphaba_service.py` now have inline documentation.
+- **External Review Triage:** Copilot critique from 2026-05-16 reviewed — 3 of 10 findings applied, 5 rejected as already resolved, 2 deferred. Full triage in `docs/hardening-critique.md` §6.
+
 ### Architecture Update (v3.8.0)
 
 - **Hub Ownership:** Dorothy (Spot DCA) is now the sole owner and default engine of the Hub.

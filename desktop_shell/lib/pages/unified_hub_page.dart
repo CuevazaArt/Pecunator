@@ -41,6 +41,9 @@ class UnifiedHubPageState extends State<UnifiedHubPage> {
   String? _stagedSymbol;
   Map<String, Map<String, dynamic>> _savedPresets = {};
 
+  final GlobalKey<BotHubTemplateState> _dorothyKey = GlobalKey();
+  final GlobalKey<BotHubTemplateState> _elphabaKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +79,8 @@ class UnifiedHubPageState extends State<UnifiedHubPage> {
           snap.botsTotal == 0) {
         _dorothyBots = snap.dorothyBots.reversed.toList();
         _elphabaBots = snap.elphabaBots.reversed.toList();
+        _dorothyKey.currentState?.updateBots(_dorothyBots);
+        _elphabaKey.currentState?.updateBots(_elphabaBots);
       }
     });
   }
@@ -95,6 +100,8 @@ class UnifiedHubPageState extends State<UnifiedHubPage> {
         _dorothyBots = dorBots.reversed.toList();
         _elphabaBots = elpBots.reversed.toList();
       });
+      _dorothyKey.currentState?.updateBots(_dorothyBots);
+      _elphabaKey.currentState?.updateBots(_elphabaBots);
     } catch (_) {}
   }
 
@@ -242,6 +249,7 @@ class UnifiedHubPageState extends State<UnifiedHubPage> {
                 Expanded(
                   flex: 4,
                   child: BotHubTemplate(
+                    key: _dorothyKey,
                     hubName: 'Dorothy',
                     hubColor: Colors.greenAccent,
                     hubIcon: Icons.trending_up,
@@ -276,6 +284,7 @@ class UnifiedHubPageState extends State<UnifiedHubPage> {
                 Expanded(
                   flex: 4,
                   child: BotHubTemplate(
+                    key: _elphabaKey,
                     hubName: 'Elphaba',
                     hubColor: const Color(0xFF00E676),
                     hubIcon: Icons.bolt,

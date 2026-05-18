@@ -30,9 +30,15 @@ class ElphabaService(BaseHubService):
     # -------------------------------------------------------------------------
 
     def _make_runner(self, log_sink: Callable, event_sink: Callable) -> ElphabaRunner:
+        """Factory: create a margin-short runner wired to the hub's log/event sinks."""
         return ElphabaRunner(log_sink, event_sink)
 
     def _make_config(self, **kwargs: Any) -> ElphabaConfig:
+        """Build an ElphabaConfig from keyword overrides, applying defaults.
+
+        Decimal fields undergo str→Decimal casting to avoid float precision
+        issues.  ``normalize()`` clamps values to safe operational ranges.
+        """
         cfg = ElphabaConfig(
             preset_id=str(kwargs.get("preset_id", "E1")),
             symbol=kwargs.get("symbol", "XRPUSDT"),
@@ -51,6 +57,7 @@ class ElphabaService(BaseHubService):
         return cfg
 
     def _record_extra(self, runner: ElphabaRunner) -> dict[str, Any]:
+        """Return Elphaba-specific fields merged into every record payload."""
         cfg = runner.config
         return {
             "preset_id": cfg.preset_id,
@@ -75,6 +82,7 @@ class ElphabaService(BaseHubService):
     # -------------------------------------------------------------------------
 
     def _init_db(self) -> None:
+        """Create the ``elphaba_instances`` table if absent (idempotent)."""
         super()._init_db()
         if self._db_path is None:
             return
@@ -106,6 +114,7 @@ class ElphabaService(BaseHubService):
                 conn.close()
 
     def _save_instance(self, rec: BotRecord) -> None:
+        """Upsert a bot record into ``elphaba_instances`` (INSERT … ON CONFLICT UPDATE)."""
         if self._db_path is None:
             return
         cfg = rec.runner.config
@@ -155,6 +164,7 @@ class ElphabaService(BaseHubService):
                 conn.close()
 
     def _load_instances_from_db(self) -> None:
+        """Hydrate in-memory ``_bots`` dict from all rows in ``elphaba_instances``."""
         if self._db_path is None:
             return
         with self._db_lock:
@@ -217,6 +227,7 @@ class ElphabaService(BaseHubService):
     # -------------------------------------------------------------------------
 
     def create_instance(self, *, tag: str, bot_id: Optional[str] = None, **kwargs: Any) -> dict[str, Any]:
+        """Create a new Elphaba margin-short instance, persist it, and return its payload."""
         bot_id_norm = (bot_id or "").strip() or f"elphaba-{uuid.uuid4().hex[:8]}"
         if bot_id_norm in self._bots:
             raise ValueError(f"Bot id already exists: {bot_id_norm}")
@@ -241,6 +252,7 @@ class ElphabaService(BaseHubService):
         return payload
 
     def update_instance(self, bot_id: str, *, tag: Optional[str] = None, **kwargs: Any) -> dict[str, Any]:
+        """Merge *kwargs* into an existing instance's config and persist the change."""
         rec = self._bots.get(bot_id)
         if rec is None:
             raise KeyError(bot_id)

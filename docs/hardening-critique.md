@@ -206,3 +206,33 @@ puede hacer backtesting con MockExchange.
 | LLM air gap | Definir matriz Propuesta-Ejecución | **Ahora** (doctrina) |
 | Kill Switch OOB | Implementar PANIC.lock + watchdog | **Pre-producción** |
 | Gateway abstracto | Documentar contrato, diferir interfaz | **Con segundo exchange** |
+
+---
+
+## 6. Revisión Externa — Copilot Critique (2026-05-16)
+
+> Fecha de revisión: 2026-05-17
+> Fuente: GitHub Copilot análisis automático del repositorio.
+> Documento original: `sat_may_16_2026_analisis_critico_del_repositorio_pecunator.md` (eliminado tras integración).
+
+### Hallazgos triados
+
+| # | Crítica Copilot | Veredicto | Justificación |
+|---|----------------|-----------|---------------|
+| 1 | Documentación interna ausente | **PARCIALMENTE VÁLIDA** | `base_hub_service.py` (16 líneas de docstring), `telemetry_collector.py` (10 líneas), `bot_service.py` tienen docs completas. Sólo `elphaba_service.py` carecía de docstrings en métodos → **corregido**. |
+| 2 | Error handling inconsistente (`_status.py`) | **ACEPTADA** | Script de operaciones sin try/except. → **corregido** con manejo robusto y `sys.exit(1)`. |
+| 3 | Error handling (`telemetry_collector.start`) | **RECHAZADA** | `ctx` es inyectado por el framework lifespan de FastAPI; nunca es `None` en uso real. |
+| 4 | Dependency management frágil | **ACEPTADA** | Versiones sin techo → **corregido** con rangos `>=X,<Y`. |
+| 5 | Testing limitado (sin mock Binance) | **DIFERIDA** | Ya existe suite de ~195 tests unitarios. Tests de integración E2E con Binance testnet son Fase 1b del roadmap. |
+| 6 | Logging inconsistente | **RECHAZADA** | `events.jsonl` structured logging existe en `base_hub_service.py`. `AlertDispatcher` envía Telegram. Los niveles WARNING/ERROR se usan en immortality, fuse, y coordinator. |
+| 7 | Configuración esparcida | **RECHAZADA** | `BaseHubService` centraliza ciclo de vida. Dorothy/Elphaba tienen configs separadas *por diseño* (diferentes estrategias, diferentes parámetros). `settings.py` centraliza gateway/env. |
+| 8 | DB sin migrations | **PARCIALMENTE VÁLIDA** | Dorothy ya tiene `ALTER TABLE` inline (lines 106-114 de `bot_service.py`). Para SQLite embedded, Alembic es overhead excesivo. El patrón actual (CREATE IF NOT EXISTS + ALTER safe) es funcional. |
+| 9 | Sin monitoreo/alertas | **RECHAZADA** | `TelemetryCollector` + `AlertDispatcher` + `events.jsonl` + WebSocket broadcast existen. Telegram alerting configurado. |
+| 10 | Flutter/Dart débil | **DIFERIDA** | Válido pero es Tier 3 del roadmap. La prioridad es el engine Python. |
+
+### Acciones ejecutadas
+
+1. `scripts/engine/_status.py` — reescrito con error handling robusto.
+2. `requirements.txt` — versiones acotadas con techo de major version.
+3. `runtime/api/elphaba_service.py` — docstrings añadidos a todos los métodos.
+
